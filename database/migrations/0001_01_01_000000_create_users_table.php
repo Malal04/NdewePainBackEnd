@@ -19,12 +19,13 @@ return new class extends Migration
             $table->string('profile')->nullable();
             $table->enum('role', [
                 'admin',
-                'Gerant',
+                'gerant',
                 'employe',
                 'client'
             ])->default('client');
             $table->enum('accountState', [
-                'actived','blocked',
+                'actived',
+                'blocked',
             ])->default('actived');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

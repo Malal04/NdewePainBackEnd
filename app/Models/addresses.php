@@ -12,12 +12,13 @@ class addresses extends Model
         'ville',
         'code_postal',
         'pays',
-        'est_principale'
+        'est_principale',
+        'type'
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-    
+
 }

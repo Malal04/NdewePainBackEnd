@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+
     /**
      * Run the migrations.
      */
@@ -13,12 +14,17 @@ return new class extends Migration
     {
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');         
             $table->string('ligne_adresse');
             $table->string('ville');
-            $table->string('code_postal');
+            $table->string('code_postal')->nullable();
             $table->string('pays')->default('Sénégal');
             $table->boolean('est_principale')->default(false);
+            $table->enum('type', [
+                'maison',
+                'bureau',
+                'autre'
+            ])->default('maison');
             $table->timestamps();
         });
     }
@@ -30,4 +36,5 @@ return new class extends Migration
     {
         Schema::dropIfExists('addresses');
     }
+    
 };
