@@ -60,6 +60,11 @@ class AuthController extends Controller
         return $this->authService->getUsersMe();
     }
 
+    public function updateProfile($request)
+    {
+        return $this->authService->updateProfile($request);
+    }
+
     /**
      * Changer le mot de passe
      */
@@ -83,5 +88,5 @@ class AuthController extends Controller
     {
         return $this->authService->resetPassword($request);
     }
-    
+
 }

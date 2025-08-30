@@ -134,6 +134,51 @@ class AuthService
     }
 
     /**
+     * Modifier les informations de l'utilisateur connecté
+    */
+    public function updateProfile($request)
+    {
+        $user = User::find(Auth::id());
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'message' => ['Utilisateur introuvable. Veuillez vous reconnecter.'],
+            ]);
+        }
+
+        $updateData = [];
+
+        if ($request->filled('nom')) {
+            $updateData['nom'] = $request->nom;
+        }
+
+        if ($request->filled('email') && $request->email !== $user->email) {
+            $updateData['email'] = $request->email;
+        }
+
+        if ($request->filled('phone') && $request->phone !== $user->phone) {
+            $updateData['phone'] = $request->phone;
+        }
+
+        // Gestion du profil (upload si nouvelle image)
+        if ($request->hasFile('profil')) {
+            $profilePath = $request->file('profil')->store('profiles', 'public');
+            $updateData['profile'] = $profilePath;
+        }
+
+        // Mise à jour uniquement si des données ont changé
+        if (!empty($updateData)) {
+            $user->update($updateData);
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Profil mis à jour avec succès.',
+            'user'    => new UserResource($user),
+        ]);
+    }
+
+    /**
      * Changer le mot de passe
      */
     public function changePassword( ChangePasswordRequest $request)
