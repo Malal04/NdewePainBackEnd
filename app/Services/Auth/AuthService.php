@@ -14,15 +14,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Facades\JWTAuth;  
 
 
 class AuthService
 {
 
-    /**
-     * Inscription d'un nouvel utilisateur
-     */
     public function register(RegisterRequest $request)
     {
 
@@ -50,15 +47,15 @@ class AuthService
         ], 201);
     }
 
-    /**
-     * Connexion de l'utilisateur
-     */
     public function login(AuthRequest $request)
     {
         $user = User::where('email', $request->email)->first();
 
         // Vérification des identifiants
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check(
+            $request->password, 
+            $user->password
+        )) {
             throw ValidationException::withMessages([
                 'message' => ['Email ou mot de passe incorrect.'],
             ]);
@@ -71,9 +68,8 @@ class AuthService
             ]);
         }
 
-        // Tentative d'authentification
         $token = JWTAuth::attempt([
-            'email'    => $request->email,
+            'email' => $request->email,
             'password' => $request->password,
         ]);
 
@@ -93,9 +89,6 @@ class AuthService
         ]);
     }
 
-    /**
-     * Déconnexion de l'utilisateur
-     */
     public function logout()
     {
         JWTAuth::logout();
@@ -106,9 +99,6 @@ class AuthService
         ]);
     }
 
-    /**
-     * Rafraîchir le token JWT
-     */
     public function refreshToken()
     {
         $token = JWTAuth::refresh();
@@ -120,9 +110,6 @@ class AuthService
         ]);
     }
 
-    /**
-     * Récupérer l'utilisateur connecté
-     */
     public function getUsersMe()
     {
         $user = Auth::user();
@@ -133,9 +120,6 @@ class AuthService
         ]);
     }
 
-    /**
-     * Modifier les informations de l'utilisateur connecté
-    */
     public function updateProfile($request)
     {
         $user = User::find(Auth::id());
@@ -178,9 +162,6 @@ class AuthService
         ]);
     }
 
-    /**
-     * Changer le mot de passe
-     */
     public function changePassword( ChangePasswordRequest $request)
     {
         $user = User::find(Auth::id());
@@ -207,9 +188,6 @@ class AuthService
         ]);
     }
 
-    /**
-     * Demande de réinitialisation du mot de passe (forgot password)
-     */
     public function forgotPassword( ForgotPasswordRequest $request)
     {
         $status = Password::sendResetLink($request->only('email'));
@@ -226,10 +204,7 @@ class AuthService
             'message' => 'Lien de réinitialisation envoyé à votre email.',
         ]);
     }
-
-    /**
-     * Réinitialisation du mot de passe avec token
-     */
+   
     public function resetPassword( ResetPasswordRequest $request)
     {
         $status = Password::reset(
@@ -253,5 +228,118 @@ class AuthService
             'message' => 'Mot de passe réinitialisé avec succès.',
         ]);
     }
+
+    public function listUsers($request)
+    {
+        $user = Auth::user();
+
+        // Si client → ne peut voir que lui-même
+        if ($user->role === 'client') {
+            return response()->json([
+                'status' => true,
+                'users'  => [new UserResource($user)],
+            ]);
+        }
+
+        // Admin / Gérant / Employé → accès à tous les utilisateurs
+        $query = User::query();
+
+        // Ajout d'un filtre optionnel (ex: ?role=client ou ?nom=John)
+        if ($request->has('role')) {
+            $query->where('role', $request->role);
+        }
+        if ($request->has('nom')) {
+            $query->where('nom', 'like', '%' . $request->nom . '%');
+        }
+        if ($request->has('email')) {
+            $query->where('email', 'like', '%' . $request->email . '%');
+        }
+
+        // Pagination (par défaut 10 par page)
+        $perPage = $request->get('per_page', 10);
+        $users = $query->latest()->paginate($perPage);
+
+        return response()->json([
+            'status' => true,
+            'users'  => UserResource::collection($users),
+            'meta'   => [
+                'current_page' => $users->currentPage(),
+                'last_page'    => $users->lastPage(),
+                'per_page'     => $users->perPage(),
+                'total'        => $users->total(),
+            ],
+        ]);
+    }
+
+    public function showUser($id)
+    {
+        $authUser = Auth::user();
+
+        // Si c’est un client → il ne peut voir que lui-même
+        if ($authUser->role === 'client' && $authUser->id != $id) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Accès refusé.',
+            ], 403);
+        }
+
+        // On récupère l'utilisateur demandé
+        $user = User::with('addresses')->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Utilisateur introuvable.',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'user'   => new UserResource($user),
+        ]);
+    }
+
+    public function changeAccountState($id, $request)
+    {
+        $authUser = Auth::user();
+
+        // Seul un admin ou gérant peut changer l'état d'un compte
+        if (!in_array($authUser->role, ['admin', 'Gerant'])) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Accès refusé. Vous n\'avez pas les permissions nécessaires.',
+            ], 403);
+        }
+
+        // Récupération de l'utilisateur ciblé
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Utilisateur introuvable.',
+            ], 404);
+        }
+
+        // Vérifie que la valeur envoyée est valide
+        if (!in_array($request->accountState, ['actived', 'blocked'])) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Valeur invalide. Les états possibles sont: actived, blocked.',
+            ], 400);
+        }
+
+        // Mise à jour de l'état
+        $user->update([
+            'accountState' => $request->accountState
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => "L'état du compte a été mis à jour avec succès.",
+            'user'    => new UserResource($user),
+        ]);
+    }
+
 
 }

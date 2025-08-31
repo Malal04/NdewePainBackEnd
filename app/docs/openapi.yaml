@@ -1,0 +1,555 @@
+openapi: "3.1.0"
+
+info:
+  title: "Boulangerie API"
+  version: "1.0.0"
+  description: "Documentation de l'API de gestion (auth, adresses, utilisateurs, etc.)"
+
+servers:
+  - url: http://localhost:8000/api
+    description: Serveur local
+
+tags:
+  - name: Auth
+    description: Endpoints d'authentification
+  - name: Adresses
+    description: Gestion des adresses utilisateur
+  - name: Users
+    description: Gestion des utilisateurs
+
+paths:
+  /v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Inscription d'un nouvel utilisateur
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [nom, email, telephone, password, role]
+              properties:
+                nom: { type: string, example: "John Doe" }
+                email: { type: string, example: "john@example.com" }
+                telephone: { type: string, example: "+221770000000" }
+                password: { type: string, format: password, example: "secret123" }
+                role: { type: string, enum: [client, employe, gerant, admin], example: client }
+                profil:
+                  type: string
+                  format: binary
+                  description: Photo de profil (upload)
+      responses:
+        "201":
+          description: Utilisateur créé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Auth"
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: "john@example.com" }
+                password: { type: string, format: password, example: "secret123" }
+      responses:
+        "200":
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Auth"
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Déconnexion
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Déconnexion réussie
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rafraîchir le token
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Nouveau token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string, example: "eyJhbGciOi..." }
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Profil de l'utilisateur connecté
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Données utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/update-profile:
+    post:
+      tags: [Auth]
+      summary: Mise à jour du profil
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                nom: { type: string, example: "John Updated" }
+                email: { type: string, example: "new@example.com" }
+                phone: { type: string, example: "+221770111222" }
+                profil:
+                  type: string
+                  format: binary
+                  description: Nouvelle photo de profil
+      responses:
+        "200":
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Changer le mot de passe
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string, format: password, example: "oldpass123" }
+                new_password: { type: string, format: password, example: "newpass456" }
+      responses:
+        "200":
+          description: Mot de passe changé
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Demander un lien de réinitialisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, example: "john@example.com" }
+      responses:
+        "200":
+          description: Email envoyé avec succès
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Réinitialiser le mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, password_confirmation, token]
+              properties:
+                email: { type: string, example: "john@example.com" }
+                password: { type: string, format: password, example: "newpass123" }
+                password_confirmation: { type: string, format: password, example: "newpass123" }
+                token: { type: string, example: "XYZ123" }
+      responses:
+        "200":
+          description: Mot de passe réinitialisé
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/users:
+    get:
+      tags: [Users]
+      summary: Liste des utilisateurs
+      description: |
+        - Client → ne voit que lui-même  
+        - Admin/Gérant/Employé → voit tout le monde
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: role
+          schema: { type: string }
+          description: Filtrer par rôle
+        - in: query
+          name: nom
+          schema: { type: string }
+          description: Filtrer par nom
+        - in: query
+          name: email
+          schema: { type: string }
+          description: Filtrer par email
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 10 }
+          description: Pagination
+      responses:
+        "200":
+          description: Liste des utilisateurs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items: { $ref: "#/components/schemas/User" }
+                  meta:
+                    type: object
+                    properties:
+                      current_page: { type: integer, example: 1 }
+                      last_page: { type: integer, example: 3 }
+                      per_page: { type: integer, example: 10 }
+                      total: { type: integer, example: 25 }
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/users/{id}:
+    get:
+      tags: [Users]
+      summary: Voir un utilisateur
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Détail utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /v1/auth/users/{id}/account-state:
+    post:
+      tags: [Users]
+      summary: Modifier l'état d'un utilisateur
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountState]
+              properties:
+                accountState:
+                  type: string
+                  enum: [actived, blocked]
+                  example: blocked
+      responses:
+        "200":
+          description: État du compte mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+
+  /adresses:
+    get:
+      summary: Lister les adresses
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: ville
+          schema: { type: string }
+          description: Filtrer par ville
+        - in: query
+          name: type
+          schema: { type: string }
+          description: Filtrer par type
+        - in: query
+          name: mode_livraison
+          schema: { type: string, enum: [livraison, retrait] }
+          description: Filtrer par mode de livraison
+        - in: query
+          name: user_id
+          schema: { type: integer }
+          description: Filtrer par utilisateur (admin/gerant/employe uniquement)
+      responses:
+        "200":
+          description: Liste des adresses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: boolean, example: true }
+                  adresses:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Adresse"
+    post:
+      summary: Créer une adresse
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdresseInput"
+      responses:
+        "201":
+          description: Adresse créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Adresse"
+      "401":
+        $ref: "#/components/responses/Unauthorized"
+      "422":
+        $ref: "#/components/responses/ValidationError"
+  /adresses/{id}:
+    get:
+      summary: Afficher une adresse
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Adresse trouvée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Adresse"
+        "404": { description: Adresse introuvable }
+    put:
+      summary: Modifier une adresse
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdresseInput"
+      responses:
+        "200": { description: Adresse modifiée }
+        "404": { description: Adresse introuvable }
+    delete:
+      summary: Supprimer une adresse
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Adresse supprimée }
+        "404": { description: Adresse introuvable }
+
+  /adresses/principale:
+    get:
+      summary: Récupérer l’adresse principale
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Adresse principale trouvée }
+        "404": { description: Aucune adresse principale }
+
+  /adresses/{id}/principale:
+    post:
+      summary: Définir une adresse principale
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Adresse définie comme principale }
+        "404": { description: Adresse introuvable }
+
+  /adresses/choisir/{id}:
+    post:
+      summary: Choisir une adresse de livraison
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Adresse choisie }
+        "404": { description: Adresse introuvable }
+
+  /adresses/choisir/retrait:
+    post:
+      summary: Choisir le retrait en boulangerie
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Mode retrait choisi }
+
+  /adresses/mode-livraison:
+    get:
+      summary: Récupérer le mode de livraison actuel
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Mode livraison/retrait trouvé }
+        "404": { description: Aucun mode défini }
+
+  /adresses/user/{userId}:
+    get:
+      summary: Lister les adresses d’un utilisateur (admin/gerant/employe uniquement)
+      tags: [Adresses]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Adresses listées }
+        "403": { description: Accès interdit }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        nom: { type: string, example: "John Doe" }
+        email: { type: string, example: "john@example.com" }
+        phone: { type: string, example: "+221770000000" }
+        role: { type: string, example: "client" }
+        accountState: { type: string, example: "actived" }
+
+    Auth:
+      type: object
+      properties:
+        token: { type: string, example: "eyJhbGciOi..." }
+        user: { $ref: "#/components/schemas/User" }
+        role: { type: string, example: "client" }
+        accountState: { type: string, example: "actived" }
+
+    Adresse:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        ligne_adresse: { type: string, example: "123 Rue de la boulangerie" }
+        ville: { type: string, example: "Dakar" }
+        code_postal: { type: string, example: "11000" }
+        pays: { type: string, example: "Sénégal" }
+        est_principale: { type: boolean, example: true }
+        type: { type: string, example: "maison" }
+        mode_livraison: { type: string, example: "livraison" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        user:
+          $ref: "#/components/schemas/User"
+
+    AdresseInput:
+      type: object
+      required: [ligne_adresse, ville, code_postal]
+      properties:
+        ligne_adresse: { type: string, example: "123 Rue de la boulangerie" }
+        ville: { type: string, example: "Dakar" }
+        code_postal: { type: string, example: "11000" }
+        pays: { type: string, example: "Sénégal" }
+        est_principale: { type: boolean, example: false }
+        type: { type: string, example: "maison" }
+        mode_livraison: { type: string, example: "livraison" }

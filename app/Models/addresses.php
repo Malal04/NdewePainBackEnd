@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class addresses extends Model
+class Addresses extends Model
 {
     protected $fillable = [
         'user_id',
@@ -13,7 +13,8 @@ class addresses extends Model
         'code_postal',
         'pays',
         'est_principale',
-        'type'
+        'type',
+        'mode_livraison',
     ];
 
     public function user()

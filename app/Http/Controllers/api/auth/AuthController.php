@@ -10,6 +10,7 @@ use App\Http\Requests\auth\RegisterRequest;
 use App\Http\Requests\auth\ResetPasswordRequest;
 use App\Services\auth\AuthService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -88,5 +89,27 @@ class AuthController extends Controller
     {
         return $this->authService->resetPassword($request);
     }
+
+    /**
+     * Lister tous les utilisateurs (admin, gérant, employé) ou uniquement soi-même (client)
+     */
+    public function listUsers($request)
+    {
+        return $this->authService->listUsers($request);
+    }
+
+    /**
+     * Afficher un seul utilisateur
+     */
+    public function showUser($id)
+    {
+        return $this->authService->showUser($id);
+    }
+
+    public function changeAccountState( Request $request, $id, AuthService $authService)
+    {
+        return $authService->changeAccountState($id, $request);
+    }
+
 
 }
