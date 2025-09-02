@@ -84,6 +84,15 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Addresses::class);
     }
 
+    public function stockHistories()
+    {
+        return $this->hasMany(StockHistory::class);
+    }
+
+    public function productionTasks()
+    {
+        return $this->hasMany(ProductionTask::class, 'user_id');
+    }
 
 
 }
