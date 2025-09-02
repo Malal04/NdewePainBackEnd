@@ -26,7 +26,7 @@ class RegisterRequest extends FormRequest
         return [
             'nom'       => 'required|string|max:255',
             'email'     => 'required|email|max:255|unique:users,email',
-            'telephone' => 'required|string|max:20|unique:users,phone',
+            'phone'     => 'required|string|max:20|unique:users,phone',
             'profil'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'password'  => 'required|string|min:6|confirmed',
             'role'      => 'required|in:client,admin,gerant,employe',
@@ -48,9 +48,9 @@ class RegisterRequest extends FormRequest
             'email.max'           => 'L\'email ne doit pas dépasser 255 caractères.',
             'email.unique'        => 'Cet email est déjà utilisé.',
 
-            'telephone.required'    => 'Le numéro de téléphone est obligatoire.',
-            'telephone.max'       => 'Le numéro de téléphone ne doit pas dépasser 20 caractères.',
-            'telephone.unique'    => 'Ce numéro de téléphone est déjà utilisé.',
+            'phone.required'      => 'Le numéro de téléphone est obligatoire.',
+            'phone.max'           => 'Le numéro de téléphone ne doit pas dépasser 20 caractères.',
+            'phone.unique'        => 'Ce numéro de téléphone est déjà utilisé.',
 
             'profil.image'        => 'Le fichier doit être une image.',
             'profil.mimes'        => 'L\'image doit être au format JPG, JPEG ou PNG.',

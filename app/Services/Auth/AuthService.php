@@ -31,7 +31,7 @@ class AuthService
         $user = User::create([
             'nom'          => $request->nom,
             'email'        => $request->email,
-            'phone'        => $request->telephone,
+            'phone'        => $request->phone,
             'profile'      => $profilePath ?? null ,
             'password'     => Hash::make($request->password),
             'role'         => $request->role,

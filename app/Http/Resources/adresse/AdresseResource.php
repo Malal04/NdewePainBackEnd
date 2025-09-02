@@ -19,6 +19,7 @@ class AdresseResource extends JsonResource
 
         $data = [
             'id'            => $this->id,
+            'user_id'       => $this->user_id,
             'ligne_adresse' => $this->ligne_adresse,
             'ville'         => $this->ville,
             'code_postal'   => $this->code_postal,
