@@ -37,7 +37,7 @@ class Produit extends Model
      */
     public function promotions()
     {
-        return $this->belongsToMany(Promotion::class, 'promotion_produit')
+        return $this->belongsToMany(Promotion::class, 'promotion_produits')
                     ->withTimestamps();
     }
 
@@ -55,6 +55,5 @@ class Produit extends Model
     {
         return $this->hasMany(ProductionTask::class);
     }
-
 
 }

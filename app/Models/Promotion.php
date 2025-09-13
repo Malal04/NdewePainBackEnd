@@ -52,8 +52,8 @@ class Promotion extends Model
      */
     public function produits()
     {
-        return $this->belongsToMany(Produit::class, 'promotion_produit')
+        return $this->belongsToMany(Produit::class, 'promotion_produits')
                     ->withTimestamps();
     }
-
+    
 }

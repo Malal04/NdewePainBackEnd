@@ -9,6 +9,11 @@ class Stock extends Model
 {
     use HasFactory;
 
+    // Stock status constants
+    const IN_STOCK = 'in_stock';
+    const LOW_STOCK = 'low_stock';
+    const OUT_OF_STOCK = 'out_of_stock';
+
     protected $fillable = [
         'produit_id',
         'quantite_actuelle',
@@ -30,11 +35,11 @@ class Stock extends Model
     public function refreshStatut(): void
     {
         if ($this->quantite_actuelle <= 0) {
-            $this->statut = 'out_of_stock';
+            $this->statut = Stock::OUT_OF_STOCK;
         } elseif ($this->quantite_actuelle <= $this->seuil_minimum) {
-            $this->statut = 'low_stock';
+            $this->statut = Stock::LOW_STOCK;
         } else {
-            $this->statut = 'in_stock';
+            $this->statut = Stock::IN_STOCK;
         }
         $this->save();
     }

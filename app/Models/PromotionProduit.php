@@ -9,7 +9,7 @@ class PromotionProduit extends Model
 {
     use HasFactory;
 
-    protected $table = 'promotion_produit';
+    protected $table = 'promotion_produits';
 
     protected $fillable = [
         'promotion_id',

@@ -94,5 +94,17 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(ProductionTask::class, 'user_id');
     }
 
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
 
+    /**
+     * 🔹 Relation : un utilisateur peut passer plusieurs commandes
+     */
+    public function commandes()
+    {
+        return $this->hasMany(Commande::class);
+    }
+    
 }

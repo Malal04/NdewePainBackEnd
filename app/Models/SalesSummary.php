@@ -28,8 +28,23 @@ class SalesSummary extends Model
         return $this->belongsTo(Produit::class);
     }
 
+    public function articleCommande()
+    {
+        return $this->belongsTo(ArticleCommande::class);
+    }
+
+    public function commande()
+    {
+        return $this->belongsTo(Commande::class);
+    }
+
     public function categorie()
     {
         return $this->belongsTo(Categorie::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

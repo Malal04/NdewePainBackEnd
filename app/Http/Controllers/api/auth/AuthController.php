@@ -61,7 +61,7 @@ class AuthController extends Controller
         return $this->authService->getUsersMe();
     }
 
-    public function updateProfile($request)
+    public function updateProfile(Request $request)
     {
         return $this->authService->updateProfile($request);
     }
@@ -93,7 +93,7 @@ class AuthController extends Controller
     /**
      * Lister tous les utilisateurs (admin, gérant, employé) ou uniquement soi-même (client)
      */
-    public function listUsers($request)
+    public function listUsers(Request $request)
     {
         return $this->authService->listUsers($request);
     }
@@ -106,10 +106,20 @@ class AuthController extends Controller
         return $this->authService->showUser($id);
     }
 
-    public function changeAccountState( Request $request, $id, AuthService $authService)
-    {
+    public function changeAccountState( 
+        Request $request, 
+        $id, 
+        AuthService $authService
+    ){
         return $authService->changeAccountState($id, $request);
     }
 
+    /**
+     * Lister uniquement les employés et gérants
+     */
+    public function listEmployesEtGerants(Request $request)
+    {
+        return $this->authService->listEmployesEtGerants($request);
+    }
 
 }

@@ -244,18 +244,17 @@ class AuthService
         // Admin / Gérant / Employé → accès à tous les utilisateurs
         $query = User::query();
 
-        // Ajout d'un filtre optionnel (ex: ?role=client ou ?nom=John)
-        if ($request->has('role')) {
-            $query->where('role', $request->role);
-        }
         if ($request->has('nom')) {
             $query->where('nom', 'like', '%' . $request->nom . '%');
         }
         if ($request->has('email')) {
             $query->where('email', 'like', '%' . $request->email . '%');
         }
+        if ($request->has('phone')) {
+            $query->where('phone', 'like', '%' . $request->phone . '%');
+        }
 
-        // Pagination (par défaut 10 par page)
+        // Pagination
         $perPage = $request->get('per_page', 10);
         $users = $query->latest()->paginate($perPage);
 
@@ -341,5 +340,46 @@ class AuthService
         ]);
     }
 
+    public function listEmployesEtGerants($request)
+    {
+        $authUser = Auth::user();
+
+        // Seul un admin ou gérant peut voir cette liste
+        if (!in_array($authUser->role, ['admin', 'Gerant'])) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Accès refusé. Vous n\'avez pas les permissions nécessaires.',
+            ], 403);
+        }
+
+        $query = User::query()
+            ->whereIn('role', ['employe', 'Gerant']);
+
+        // Ajout de filtres optionnels (recherche par nom/email/phone)
+        if ($request->has('nom')) {
+            $query->where('nom', 'like', '%' . $request->nom . '%');
+        }
+        if ($request->has('email')) {
+            $query->where('email', 'like', '%' . $request->email . '%');
+        }
+        if ($request->has('phone')) {
+            $query->where('phone', 'like', '%' . $request->phone . '%');
+        }
+
+        // Pagination
+        $perPage = $request->get('per_page', 10);
+        $users = $query->latest()->paginate($perPage);
+
+        return response()->json([
+            'status' => true,
+            'users'  => UserResource::collection($users),
+            'meta'   => [
+                'current_page' => $users->currentPage(),
+                'last_page'    => $users->lastPage(),
+                'per_page'     => $users->perPage(),
+                'total'        => $users->total(),
+            ],
+        ]);
+    }
 
 }

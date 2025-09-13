@@ -9,6 +9,12 @@ class StockHistory extends Model
 {
     use HasFactory;
 
+
+    // Movement types
+    const ENTREE = 'entree';
+    const SORTIE = 'sortie';
+    const AJUSTEMENT = 'ajustement';    
+
     protected $fillable = [
         'produit_id',
         'type_mouvement',
